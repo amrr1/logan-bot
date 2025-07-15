@@ -1,48 +1,40 @@
 package main
 
 import (
-	"fmt"
-	"log"
-	"os"
-	"syscall"
-	"os/signal"
-	"strings"
+    "fmt"
+    "log"
+    "os"
+    "syscall"
+    "os/signal"
 
-	"github.com/bwmarrin/discordgo"
-	"github.com/joho/godotenv"
+    "github.com/bwmarrin/discordgo"
+    "github.com/joho/godotenv"
+    "go-logan-bot/src/bot" // Import your bot package
 )
 
 func main() {
-	godotenv.Load()
+    godotenv.Load()
 
-	token := os.Getenv("BOT_KEY")
+    token := os.Getenv("BOT_KEY")
 
-	sess, err := discordgo.New("Bot " + token)
-	if err != nil {
-		log.Fatal(err)
-	}
+    sess, err := discordgo.New("Bot " + token)
+    if err != nil {
+        log.Fatal(err)
+    }
 
-	sess.AddHandler(func(s *discordgo.Session, m *discordgo.MessageCreate) {
-		if m.Author.ID == s.State.User.ID {
-			return
-		}
+    sess.AddHandler(bot.MessageHandler) // Use the handler from the bot package
 
-		if strings.Contains(strings.ToLower(m.Content), "logan") {
-			s.ChannelMessageSend(m.ChannelID, "IM LOGING OUT")
-		}
-	})
+    sess.Identify.Intents = discordgo.IntentsAllWithoutPrivileged
 
-	sess.Identify.Intents = discordgo.IntentsAllWithoutPrivileged
+    err = sess.Open()
+    if err != nil {
+        log.Fatal("error opening connection: ", err)
+    }
+    defer sess.Close()
 
-	err = sess.Open()
-	if err != nil {
-		log.Fatal("error opening connection: ", err)
-	}
-	defer sess.Close()
+    fmt.Println("Bot is now running. Press CTRL+C to exit.")
 
-	fmt.Println("Bot is now running. Press CTRL+C to exit.")
-
-	sc := make(chan os.Signal, 1)
-	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
-	<-sc
+    sc := make(chan os.Signal, 1)
+    signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt)
+    <-sc
 }
